@@ -1,30 +1,33 @@
 defmodule OMetex.Worker do
   use GenServer
 
+  @name MW
+
+
   ## Client APIs
 
   def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, :ok, opts)
+    GenServer.start_link(__MODULE__, :ok, opts ++ [name: @name])
   end
 
 
-  def stop(pid) do
-    GenServer.cast(pid, :stop)
+  def stop do
+    GenServer.cast(@name, :stop)
   end
 
 
-  def get_temperature(pid, location) do
-    GenServer.call(pid, {:location, location})
+  def get_temperature(location) do
+    GenServer.call(@name, {:location, location})
   end
 
 
-  def get_stats(pid) do
-    GenServer.call(pid, :get_stats)
+  def get_stats do
+    GenServer.call(@name, :get_stats)
   end
 
 
-  def reset_stats(pid) do
-    GenServer.cast(pid, :reset_stats)
+  def reset_stats do
+    GenServer.cast(@name, :reset_stats)
   end
 
 
