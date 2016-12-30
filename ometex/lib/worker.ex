@@ -8,8 +8,23 @@ defmodule OMetex.Worker do
   end
 
 
+  def stop(pid) do
+    GenServer.cast(pid, :stop)
+  end
+
+
   def get_temperature(pid, location) do
     GenServer.call(pid, {:location, location})
+  end
+
+
+  def get_stats(pid) do
+    GenServer.call(pid, :get_stats)
+  end
+
+
+  def reset_stats(pid) do
+    GenServer.cast(pid, :reset_stats)
   end
 
 
@@ -17,6 +32,13 @@ defmodule OMetex.Worker do
 
   def init(:ok) do
     {:ok, %{}}
+  end
+
+
+  def terminate(reason, stats) do
+    IO.puts "server terminated because of #{inspect reason}"
+    inspect stats
+    :ok
   end
 
 
@@ -29,6 +51,27 @@ defmodule OMetex.Worker do
       _->
         {:reply, :error, stats}
     end
+  end
+
+
+  def handle_call(:get_stats, _from, stats) do
+    {:reply, stats, stats}
+  end
+
+
+  def handle_cast(:reset_stats, _stats) do
+    {:noreply, %{}}
+  end
+
+
+  def handle_cast(:stop, stats) do
+    {:stop, :normal, stats}
+  end
+
+
+  def handle_info(msg, stats) do
+    IO.puts "received #{inspect msg}"
+    {:noreply, stats}
   end
 
 
