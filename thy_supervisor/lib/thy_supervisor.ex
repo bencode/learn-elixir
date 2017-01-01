@@ -1,6 +1,3 @@
-require IEx
-
-
 defmodule ThySupervisor do
   use GenServer
 
@@ -154,16 +151,15 @@ defmodule ThySupervisor do
 
 
   defp restart_child(pid, child_spec) do
-    IEx.pry
     case terminate_child(pid) do
-      :ok ->
+      :true ->
         case start_child(child_spec) do
           {:ok, new_pid} ->
             {:ok, {new_pid, child_spec}}
           :error ->
             :error
         end
-      :error ->
+      :_ ->
         :error
     end
   end
