@@ -4,7 +4,7 @@ defmodule Pooly.Server do
 
 
   defmodule State do
-    defstruct sup: nil, size: nil, mfa: nil, monitors: nil
+    defstruct sup: nil, size: nil, mfa: nil, monitors: nil, workers: nil
   end
 
 
@@ -33,6 +33,9 @@ defmodule Pooly.Server do
     init(pool_config, %State{sup: sup, monitors: monitors})
   end
 
+  ## 这段递归程序用于执行一个判断和更新到state的操作
+  ## 如果我来实现的话，很可能使用迭代
+  ## 不过迭代应该也不会复杂
   def init([{:mfa, mfa} | rest], state) do
     init(rest, %State{state | mfa: mfa})
   end
@@ -72,7 +75,7 @@ defmodule Pooly.Server do
     case :ets.lookup(monitors, worker) do
       [{pid, ref}] ->
         true = Process.demonitor(ref)
-        true = :ets.delete(monitors, ref)
+        true = :ets.delete(monitors, pid)
         {:noreply, %{state | workers: [pid | workers]}}
       [] ->
         {:noreply, state}
@@ -84,24 +87,27 @@ defmodule Pooly.Server do
       state = %{sup: sup, size: size, mfa: mfa}) do
     {:ok, worker_sup} = Supervisor.start_child(sup, supervisor_spec(mfa))
     workers = prepopulate(size, worker_sup)
-    {:noreply, %{state | worker_sup: worker_sup, workers: workers}}
+    {:noreply, %{state | sup: worker_sup, workers: workers}}
   end
 
 
   defp supervisor_spec(mfa) do
     opts = [restart: :temporary]
-    supervisor(Pooly.WorkerSuperviser, [mfa], opts)
+    supervisor(Pooly.WorkerSupervisor, [mfa], opts)
   end
 
 
+  ## 这个又是一个递归迭代
   defp prepopulate(size, sup) do
     prepopulate(size, sup, [])
   end
 
+  ## 终止条件
   defp prepopulate(size, _sup, workers) when size < 1 do
     workers
   end
 
+  ## 入口
   defp prepopulate(size, sup, workers) do
     prepopulate(size - 1, sup, [new_worker(sup) | workers])
   end
