@@ -8,113 +8,44 @@ defmodule Pooly.Server do
   end
 
 
-  def start_link(sup, pool_config) do
-    GenServer.start_link(__MODULE__, [sup, pool_config], name: __MODULE__)
+  def start_link(pools_config) do
+    GenServer.start_link(__MODULE__, pools_config, name: __MODULE__)
   end
 
 
-  def checkout do
-    GenServer.call(__MODULE__, :checkout)
+  def checkout(pool_name) do
+    GenServer.call(:"#{pool_name}Server", :checkout)
   end
 
 
-  def checkin(worker_pid) do
-    GenServer.cast(__MODULE__, {:checkin, worker_pid})
+  def checkin(pool_name, worker_pid) do
+    GenServer.cast(:"#{pool_name}Server", {:checkin, worker_pid})
   end
 
 
-  def status() do
-    GenServer.call(__MODULE__, :status)
+  def status(pool_name) do
+    GenServer.call(:"#{pool_name}Server", :status)
   end
 
 
-  def init([sup, pool_config]) when is_pid(sup) do
-    monitors = :ets.new(:monitors, [:private])
-    init(pool_config, %State{sup: sup, monitors: monitors})
-  end
+  def init([pools_config]) do
+    IO.inspect pools_config
+    pools_config |> Enum.each(fn(pool_config) ->
+      send(self, {:start_pool, pool_config})
+    end)
 
-  ## 这段递归程序用于执行一个判断和更新到state的操作
-  ## 如果我来实现的话，很可能使用迭代
-  ## 不过迭代应该也不会复杂
-  def init([{:mfa, mfa} | rest], state) do
-    init(rest, %State{state | mfa: mfa})
-  end
-
-  def init([{:size, size} | rest], state) do
-    init(rest, %State{state | size: size})
-  end
-
-  def init([_ | rest], state) do
-    init(rest, state)
-  end
-
-  def init([], state) do
-    send(self, :start_worker_supervisor)
-    {:ok, state}
+    {:ok, pools_config}
   end
 
 
-  def handle_call(:checkout, {from_pid, _ref}, %{workers: workers, monitors: monitors} = state) do
-    case workers do
-      [worker | rest] ->
-        ref = Process.monitor(from_pid)
-        true = :ets.insert(monitors, {worker, ref})
-        {:reply, worker, %{state | workers: rest}}
-      [] ->
-        {:reply, :noproc, state}
-    end
+  def handle_info({:start_pool, pool_config}, state) do
+    {:ok, _pool_sup} = Supervisor.start_child(Pooly.PoolsSupervisor, supervisor_spec(pool_config))
+    {:noreply, state}
   end
 
 
-  def handle_call(:status, _from, %{monitors: monitors, workers: workers} = state) do
-    {:reply, {length(workers), :ets.info(monitors, :size)}, state}
-  end
-
-
-  def handle_cast({:checkin, worker}, %{workers: workers, monitors: monitors} = state) do
-    case :ets.lookup(monitors, worker) do
-      [{pid, ref}] ->
-        true = Process.demonitor(ref)
-        true = :ets.delete(monitors, pid)
-        {:noreply, %{state | workers: [pid | workers]}}
-      [] ->
-        {:noreply, state}
-    end
-  end
-
-
-  def handle_info(:start_worker_supervisor,
-      state = %{sup: sup, size: size, mfa: mfa}) do
-    {:ok, worker_sup} = Supervisor.start_child(sup, supervisor_spec(mfa))
-    workers = prepopulate(size, worker_sup)
-    {:noreply, %{state | sup: worker_sup, workers: workers}}
-  end
-
-
-  defp supervisor_spec(mfa) do
-    opts = [restart: :temporary]
-    supervisor(Pooly.WorkerSupervisor, [mfa], opts)
-  end
-
-
-  ## 这个又是一个递归迭代
-  defp prepopulate(size, sup) do
-    prepopulate(size, sup, [])
-  end
-
-  ## 终止条件
-  defp prepopulate(size, _sup, workers) when size < 1 do
-    workers
-  end
-
-  ## 入口
-  defp prepopulate(size, sup, workers) do
-    prepopulate(size - 1, sup, [new_worker(sup) | workers])
-  end
-
-
-  defp new_worker(sup) do
-    {:ok, worker} = Supervisor.start_child(sup, [[]])
-    worker
+  defp supervisor_spec(pool_config) do
+    opts = [:id, :"#{pool_config[:name]}Supervisor"]
+    supervisor(Pooly.PoolSupervisor, [pool_config], opts)
   end
 end
