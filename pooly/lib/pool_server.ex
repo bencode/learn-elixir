@@ -43,6 +43,10 @@ defmodule Pooly.PoolServer do
     init(rest, %State{state | size: size})
   end
 
+  def init([{:name, name} | rest], state) do
+    init(rest, %State{state | name: name})
+  end
+
   def init([_ | rest], state) do
     init(rest, state)
   end
