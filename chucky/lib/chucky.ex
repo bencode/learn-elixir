@@ -1,0 +1,2 @@
+defmodule Chucky do
+end
