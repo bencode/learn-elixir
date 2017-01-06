@@ -6,7 +6,7 @@ defmodule Chucky do
   def start(type, _args) do
     import Supervisor.Spec
     children = [
-      worker(Chunck.Server, [])
+      worker(Chucky.Server, [])
     ]
 
     case type do
@@ -20,7 +20,7 @@ defmodule Chucky do
         Logger.info "#{old_node} is failover to #{node}"
     end
 
-    opts = [strategy: :one_for_onoe, name: {:global, Chucky.Supervisor}]
+    opts = [strategy: :one_for_one, name: {:global, Chucky.Supervisor}]
     Supervisor.start_link(children, opts)
   end
 
