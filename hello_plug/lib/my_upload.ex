@@ -15,11 +15,15 @@ defmodule MyUpload do
   post "/upload" do
     %{filename: filename, path: path} = conn.body_params["file"]
     if File.exists? path do
-      dst = Path.join(__DIR__, filename)
-      File.cp!(path, dst)
+      Logger.debug("compress video: #{path}")
+      compress_video(path)
       conn |> send_resp(200, "success!")
     else
       conn |> send_resp(200, "error!")
     end
+  end
+
+
+  defp compress_video(path) do
   end
 end
