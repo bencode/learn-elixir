@@ -4,6 +4,7 @@ defmodule A.B.C do
   end
 end
 
+
 defmodule Complex do
   def add(a, b) do
     a + b
@@ -13,44 +14,30 @@ defmodule Complex do
     a * b
   end
 
-  defmacro load do
+  defmacro __using__(_opts) do
     import A.B.C
     quote do
       import Complex
+      alias A.B.C, as: ABC
       def say do
-        hi()
+        hi() + 1
       end
     end
   end
 end
 
 
-
 defmodule UseComplex do
-  require Complex
-  Complex.load
+  use Complex
 
   def go do
-    add(1, 2)
-  end
-
-  def doit do
-  end
-end
-
-
-defmodule Main do
-  def run do
-    require Complex
-    ast = quote do
-      Complex.load()
-    end
-    # IO.inspect Macro.expand(ast, __ENV__)
-    Macro.expand(ast, __ENV__)
-    |> Macro.to_string
-    |> IO.puts
+    IO.puts add(1, 2)
+    IO.puts mul(3, 4)
+    IO.puts say()
+    IO.puts ABC.hi()
+    #IO.puts hi()    # (CompileError) c.exs:38: undefined function hi/0
   end
 end
 
 
-Main.run()
+UseComplex.go
