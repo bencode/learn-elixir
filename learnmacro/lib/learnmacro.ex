@@ -1,18 +1,17 @@
-defmodule Learnmacro do
-  @moduledoc """
-  Documentation for Learnmacro.
-  """
+defmodule Fsm do
+  fsm = [
+    running: {:pause, :paused},
+    running: {:stop, :stopped},
+    paused: {:resume, :running}
+  ]
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Learnmacro.hello
-      :world
-
-  """
-  def hello do
-    :world
+  for {state, {action, next_state}} <- fsm do
+    def unquote(action)(unquote(state)), do: unquote(next_state)
   end
+
+  def initial, do: :running
 end
+
+Fsm.initial|> IO.inspect
+
+Fsm.initial |> Fsm.pause |> IO.inspect
