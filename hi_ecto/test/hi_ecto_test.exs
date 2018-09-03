@@ -32,22 +32,22 @@ defmodule HiEctoTest do
     end
   end
 
-  # test "simple" do
-  #   product = %Product{
-  #     name: "Learn Elixir",
-  #     body: "learn elixir day by day",
-  #     price: 1.11,
-  #     available: true
-  #   }
-  #   product = Repo.insert!(product)
+  test "simple" do
+    product = %Product{
+      name: "Learn Elixir",
+      body: "learn elixir day by day",
+      price: 1.11,
+      available: true
+    }
+    product = Repo.insert!(product)
 
-  #   assert product.id != nil
+    assert product.id != nil
 
-  #   product2 = Repo.get!(Product, product.id)
-  #   assert product == product2
+    product2 = Repo.get!(Product, product.id)
+    assert product == product2
 
-  #   Repo.delete!(product2)
-  # end
+    Repo.delete!(product2)
+  end
 
   test "join" do
     name = "%Elixir%"
@@ -55,13 +55,19 @@ defmodule HiEctoTest do
       join: p in assoc(v, :product),
       join: c in assoc(p, :category),
       where: (like(v.name, ^name) and like(c.name, ^name)) or (like(p.name, ^name) and like(c.name, ^name))
-    # list = Repo.all(query)
+    list = Repo.all(query)
+    IO.inspect list
   end
 
   test "expr" do
     name = "%Elixir%"
     expr = "product.category.name and name or product.category.name and category.name and (product.name or product.body) like"
-    query = HiEcto.QueryBuilder.build(expr)
+
+    rule = HiEcto.QueryBuilder.parse(expr)
+    assert rule == %{
+    }
+
+    # query = HiEcto.QueryBuilder.build(expr)
     # list = Repo.all(query)
   end
 end

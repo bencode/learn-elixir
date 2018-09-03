@@ -1,15 +1,19 @@
 defmodule HiEcto.QueryBuilder do
-  def build(expr) when is_binary(expr) do
+  def build(module, expr) when is_binary(expr) do
+    rule = parse(expr)
+  end
+
+  def parse(expr) do
     tokens =
       expr
       |> String.split(~r/[()\s]/, include_captures: true)
       |> Enum.reject(&(&1 =~ ~r/^\s*$/))
 
-    IO.inspect expr
     expr = parse_expr(tokens |> Enum.drop(-1))
     fun = Enum.at(tokens, -1)
-    IO.inspect expr
+    %{expr: expr, fun: fun}
   end
+
 
   # expr -> group_expr | or_expr
   # group_expr -> (expr)
@@ -36,41 +40,39 @@ defmodule HiEcto.QueryBuilder do
   defp parse_or(["(" | _] = tokens) do
     tokens
     |> parse_group
-    |> parse_recur(:or, &parse_or/1)
+    |> parse_recur("or", &parse_or/1)
   end
   defp parse_or(tokens) do
     tokens
     |> parse_and
-    |> parse_recur(:or, &parse_or/1)
+    |> parse_recur("or", &parse_or/1)
   end
 
   defp parse_and(["(" | _] = tokens) do
     tokens
     |> parse_group
-    |> parse_recur(:and, &parse_and/1)
+    |> parse_recur("and", &parse_and/1)
   end
   defp parse_and(tokens) do
     tokens
     |> parse_selector
-    |> parse_recur(:and, &parse_and/1)
+    |> parse_recur("and", &parse_and/1)
   end
 
   defp parse_selector([selector | remain]) when is_binary(selector) do
-    {selector, remain}
+    {{:selector, selector}, remain}
   end
 
   @stop [")", "and", "or"]
-  defp parse_recur({left, [op, ahead | remain]}, name, parser) when ahead not in @stop do
-    "#{name}" == op
+  defp parse_recur({left, [op, ahead | remain]}, name, parser)
+  when op == name and ahead not in @stop do
     {right, extra} = parser.([ahead | remain])
-    {{name, left, right}, extra}
+    {{:"#{name}", left, right}, extra}
   end
   defp parse_recur({expr, remain}, _name, _) do
     {expr, remain}
   end
 
-  defp log(v, name) do
-    IO.inspect {name, v}
-    v
+  defp get_joins(expr) do
   end
 end
