@@ -1,6 +1,18 @@
 defmodule HiEcto.QueryBuilder do
-  def build(module, expr) when is_binary(expr) do
-    rule = parse(expr)
+  import Ecto.Query
+
+  def build(module, expr, value) when is_binary(expr) do
+    %{expr: expr, fun: fun} = parse(expr)
+    joins = get_joins(expr)
+    IO.inspect joins
+
+    query = from self in module
+    query =
+      joins
+      |> Enum.reduce(query, fn table, acc ->
+        join(acc, :inner, [...,p1], p2 in assoc(p1, ^table))  # 这里的p1,p2需要调整，我搞得不是很明白
+      end)
+      |> build_where(expr, fun, value)
   end
 
   def parse(expr) do
@@ -9,7 +21,7 @@ defmodule HiEcto.QueryBuilder do
       |> String.split(~r/[()\s]/, include_captures: true)
       |> Enum.reject(&(&1 =~ ~r/^\s*$/))
 
-    expr = parse_expr(tokens |> Enum.drop(-1))
+    {expr, []} = parse_expr(tokens |> Enum.drop(-1))
     fun = Enum.at(tokens, -1)
     %{expr: expr, fun: fun}
   end
@@ -60,7 +72,7 @@ defmodule HiEcto.QueryBuilder do
   end
 
   defp parse_selector([selector | remain]) when is_binary(selector) do
-    {{:selector, selector}, remain}
+    {{:selector, transform_selector(selector)}, remain}
   end
 
   @stop [")", "and", "or"]
@@ -73,6 +85,30 @@ defmodule HiEcto.QueryBuilder do
     {expr, remain}
   end
 
+  defp transform_selector(selector) do
+    parts = String.split(selector, ~r/\./)
+    joins =
+      parts
+      |> Enum.drop(-1)
+      |> Enum.map(fn table -> :"#{table}"
+      end)
+    namespace = length(parts) > 1 && Enum.at(parts, -2) || nil
+    field = parts |> Enum.at(-1)
+    %{joins: joins, field: field, namespace: namespace}
+  end
+
   defp get_joins(expr) do
+    expr |> get_joins_inner |> Enum.uniq
+  end
+  defp get_joins_inner({op, left, right}) when op in [:and, :or] do
+    get_joins_inner(left) ++ get_joins_inner(right)
+  end
+  defp get_joins_inner({:selector, %{joins: joins}}) do
+    joins
+  end
+
+  defp build_where(query, expr, fun, value) do
+    #build_where(left, fun, value) or build_where(right, fun, value)
+    query
   end
 end
