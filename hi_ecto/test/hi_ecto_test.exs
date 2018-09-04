@@ -63,8 +63,23 @@ defmodule HiEctoTest do
     name = "%Elixir%"
     expr = "product.category.name and name or product.category.name and category.name and (product.name or product.body) like"
 
-    # rule = HiEcto.QueryBuilder.parse(expr)
-    # IO.inspect rule
+    rule = HiEcto.QueryBuilder.parse(expr)
+    assert rule == %{
+      expr: {:or,
+             {:and,
+              {:selector,
+               %{field: "name", joins: [:product, :category], namespace: "category"}},
+              {:selector, %{field: "name", joins: [], namespace: nil}}},
+             {:and,
+              {:selector,
+               %{field: "name", joins: [:product, :category], namespace: "category"}},
+              {:and,
+               {:selector, %{field: "name", joins: [:category], namespace: "category"}},
+               {:or,
+                {:selector, %{field: "name", joins: [:product], namespace: "product"}},
+                {:selector, %{field: "body", joins: [:product], namespace: "product"}}}}}},
+      fun: "like"
+    }
 
     query = HiEcto.QueryBuilder.build(Variant, expr, "%Elixir%")
     list = Repo.all(query)
