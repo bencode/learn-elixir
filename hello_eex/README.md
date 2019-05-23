@@ -1,21 +1,45 @@
-# HelloEex
+# EEx
 
-**TODO: Add description**
+https://hexdocs.pm/eex/master/EEx.html
 
-## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `hello_eex` to your list of dependencies in `mix.exs`:
+## API
 
-```elixir
-def deps do
-  [
-    {:hello_eex, "~> 0.1.0"}
-  ]
-end
+- `eval_string`, `eval_file` 可用，慢。
+- `function_from_string`, `function_from_file`， 建议
+- `compile_string`, `compile_file` 高级，可自定义
+
+## Engine
+
+可自定义转换的引擎，默认为 `EEx.SmartEngine`
+
+
+### Tags
+
+```eex
+<% Elixir expression %>
+<%= Elixir expression %>
+<%% EEx quotation %%>
+<%# 注释 %
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/hello_eex](https://hexdocs.pm/hello_eex).
+`everytihing in elixir is an expression`
+
+
+### Macros
+
+```elixir
+iex> EEx.eval_string("<%= @foo %>", assigns: [: 1])
+```
+
+`<%= @foo %>` 相当于
+
+```elixir
+<%= {:ok, v} = Access.fetch(assigns, :foo); v %>
+```
+
+这真是一个好技巧
+
+v = 
+
 
