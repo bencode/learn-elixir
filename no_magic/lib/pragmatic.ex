@@ -9,6 +9,16 @@ defmodule Pragmatic do
     end)
   end
 
+  def worker(state \\ nil) do
+    receive do
+      {:set, value} ->
+        worker(value)
+      {:get, from} ->
+        send(from, state)
+        worker(state)
+    end
+  end
+
   def run() do
     worker = fn ->
       :timer.sleep(1_000)
