@@ -4,7 +4,6 @@ defmodule MyList do
   end
 end
 
-
 defmodule OtherList do
   defdelegate sum(list), to: MyList
 end
