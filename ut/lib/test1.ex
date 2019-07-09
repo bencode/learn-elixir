@@ -1,4 +1,4 @@
-defmodule Test do
+defmodule Test1 do
   def load_all do
     a = Task.async fn -> load_a() end
     b = Task.async fn -> load_b() end
