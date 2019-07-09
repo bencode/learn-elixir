@@ -14,6 +14,7 @@ defmodule UseGuards do
     :something_else
   end
 
+  # 如果每个条件都仅返回boolean，而不raise exception，上面语句相当于下面的语句
   # 上面的条件可以简化成下面的语句
   def bar(term)
       when is_integer(term)
