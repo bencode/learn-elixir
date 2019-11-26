@@ -55,6 +55,6 @@ defmodule FEcto.Schema do
   end
 
   defp define_field(mod, name, type) do
-    Module.put_attribute(mod, :struct_fields, {name, type})
+    Module.put_attribute(mod, :struct_fields, {name, nil})
   end
 end
