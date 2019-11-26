@@ -12,6 +12,9 @@ defmodule FEctoTest do
   end
 
   test "hello" do
-    assert true
+    person = %Person{}
+
+    IO.inspect person
+    IO.inspect {:source, Person.__schema__(:source)}
   end
 end
