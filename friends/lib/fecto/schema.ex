@@ -12,6 +12,11 @@ defmodule FEcto.Schema do
   defp schema(source, meta?, type, block) do
     IO.inspect {block}
     quote do
+      @after_compile FEcto.Schema
     end
+  end
+
+  def __after_compile__(%{module: module} = env, _) do
+    IO.inspect {"after_compile", module}
   end
 end
