@@ -1,0 +1,12 @@
+version: "3.6"
+
+services:
+  friends_postgres:
+    image: sameersbn/postgresql:9.6
+    environment:
+      - DB_USER=friends
+      - DB_PASS=friends
+      - DB_NAME=friends_dev
+    ports:
+      - "15433:5432"
+
