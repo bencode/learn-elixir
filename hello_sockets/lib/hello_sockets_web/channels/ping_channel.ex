@@ -1,6 +1,8 @@
 defmodule HelloSocketsWeb.PingChannel do
   use Phoenix.Channel
 
+  intercept ["request_ping"]
+
   def join(_topic, _payload, socket) do
     {:ok, socket}
   end
@@ -23,5 +25,10 @@ defmodule HelloSocketsWeb.PingChannel do
 
   def handle_in("pang", _payload, socket) do
     {:stop, :shutdown, {:ok, %{msg: "shutting down"}}, socket}
+  end
+
+  def handle_out("request_ping", payload, socket) do
+    push(socket, "send_ping", Map.put(payload, "from_node", Node.self()))
+    {:noreply, socket}
   end
 end
