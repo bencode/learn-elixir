@@ -49,3 +49,14 @@ channel.on('send_ping', payload => {
       console.log('ping:', resp.ping);
     })
 });
+
+channel.push('invalid')
+  .receive('ok', resp => {
+    console.log('wont happen');
+  })
+  .receive('error', resp => {
+    console.error('wont happen');
+  })
+  .receive('timeout', resp => {
+    console.error('invalid event timeout');
+  })
